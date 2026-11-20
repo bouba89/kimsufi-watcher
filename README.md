@@ -195,4 +195,4 @@ Le projet tient dans un seul fichier, `app.py` (surveillance, API JSON et page w
 
 ## Licence
 
-À définir avant publication (par exemple MIT).
+ Sous License MIT voir le fichier LICENSE
