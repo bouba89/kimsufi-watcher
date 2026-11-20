@@ -47,7 +47,8 @@ alerted = set()
 names = {}        # planCode -> nom commercial (KS-LE-3...)
 names_ts = 0.0    # dernière tentative de chargement du catalogue
 plan_prices = {}  # planCode -> {"month": prix HT/mois, "setup": frais d'installation HT}
-addon_prices = {} # code d'option (RAM, stockage) -> prix HT/mois
+addon_prices = {}  # code d'option -> {"month": prix HT/mois, "setup": frais d'installation HT}
+raw_pricings = {}  # code -> pricings bruts du catalogue (pour le debug)
 TVA = 1.20        # TVA française
 plan_addons = {}  # planCode -> ensemble des options réellement commandables
 
@@ -237,29 +238,6 @@ def orderable(plan, memory, storage):
     if not fam:
         return True  # catalogue pas encore chargé ou plan inconnu : on ne filtre pas
     return f"{memory}-{plan}" in fam and f"{storage}-{plan}" in fam
-
-
-def fmt_price(plan, memory, storage):
-    """Retourne (texte du prix, infobulle). Vide si le prix est inconnu."""
-    with lock:
-        base = plan_prices.get(plan)
-        if not base or base.get("month") is None:
-            return "", ""
-        total, complete = base["month"], True
-        for part in (memory, storage):
-            a = addon_prices.get(f"{part}-{plan}")
-            if a is None:
-                complete = False
-            else:
-                total += a
-        setup = base.get("setup")
-    text = f"{'' if complete else 'dès '}{eur(total)} HT/mois · {eur(round(total * TVA, 2))} TTC"
-    tip = f"Frais d'installation : {eur(setup)} HT" if setup else ""
-    if not complete:
-        tip = (tip + " · " if tip else "") + "Prix de base : le tarif exact de cette option n'a pas été trouvé"
-    return text, tip
-
-
 def refresh_catalog():
     """Charge noms et prix depuis le catalogue (toutes les 6 h, retry 10 min si échec)."""
     global names_ts
@@ -274,7 +252,7 @@ def refresh_catalog():
         r = requests.get(CATALOG, timeout=30)
         r.raise_for_status()
         cat = r.json()
-        new_names, new_plans, new_addons, new_pa = {}, {}, {}, {}
+        new_names, new_plans, new_addons, new_pa, new_raw = {}, {}, {}, {}, {}
         for p in cat.get("plans", []):
             code = p.get("planCode")
             nm = (p.get("invoiceName") or "").split("|")[0].strip()
@@ -285,26 +263,77 @@ def refresh_catalog():
                 fam.update(f.get("addons") or [])
             if code and fam:
                 new_pa[code] = fam
+            if code:
+                new_raw[code] = p.get("pricings")
             month = _price(p.get("pricings"), "renew")
             setup = _price(p.get("pricings"), "installation")
             if code and (month is not None or setup is not None):
                 new_plans[code] = {"month": month, "setup": setup}
         for a in cat.get("addons", []):
             code = a.get("planCode")
+            if not code:
+                continue
             m = _price(a.get("pricings"), "renew")
-            if code and m is not None:
-                new_addons[code] = m
+            s = _price(a.get("pricings"), "installation")
+            new_raw[code] = a.get("pricings")
+            if m is not None or s is not None:
+                new_addons[code] = {"month": m, "setup": s}
         with lock:
             if new_names:
                 names.update(new_names)
             plan_prices.update(new_plans)
             addon_prices.update(new_addons)
             plan_addons.update(new_pa)
+            raw_pricings.update(new_raw)
     except Exception as e:
         with lock:
             state["error"] = f"catalogue : {e}"
 
 
+def price_parts(plan, memory, storage):
+    """Prix découpé en morceaux (mensuel TTC, installation HT, total 1er mois TTC)."""
+    with lock:
+        base = plan_prices.get(plan)
+        if not base or base.get("month") is None:
+            return None
+        total = base["month"]
+        setup = base.get("setup") or 0.0
+        setup_known = base.get("setup") is not None
+        missing = []
+        for part in (memory, storage):
+            a = addon_prices.get(f"{part}-{plan}")
+            if a is None or a.get("month") is None:
+                missing.append(part)
+                continue
+            total += a["month"]
+            setup += a.get("setup") or 0.0
+    complete = not missing
+    parts = {
+        "month": f"{'' if complete else 'dès '}{eur(round(total * TVA, 2))} TTC/mois",
+        "setup": "",
+        "first": "",
+        "tip": "",
+    }
+    if setup > 0:
+        parts["setup"] = f"installation {eur(setup)} HT"
+        parts["first"] = f"1er mois : {eur(round((total + setup) * TVA, 2))} TTC"
+    elif setup_known and complete:
+        parts["setup"] = "installation offerte"
+    else:
+        parts["setup"] = "installation : non trouvée"
+    if missing:
+        parts["tip"] = "Prix d'option introuvable dans le catalogue : " + ", ".join(missing)
+    return parts
+
+
+def fmt_price(plan, memory, storage):
+    """Texte simple (utilisé pour Discord). Retourne (texte, infobulle)."""
+    p = price_parts(plan, memory, storage)
+    if not p:
+        return "", ""
+    text = " · ".join(x for x in (p["month"], p["setup"], p["first"]) if x)
+    return text, p["tip"]
+        
 def poll_loop():
     while True:
         refresh_catalog()
@@ -370,8 +399,9 @@ def api_state():
             if any(r.get("plan") == s.get("planCode") for r in rules):
                 ok = orderable(s["planCode"], s.get("memory"), s.get("storage"))
                 price_h, price_tip = fmt_price(s["planCode"], s.get("memory"), s.get("storage")) if ok else ("", "")
+                price_p = price_parts(s["planCode"], s.get("memory"), s.get("storage")) if ok else None
                 configs.append({
-                    "price_h": price_h, "price_tip": price_tip,
+                    "price_h": price_h, "price_tip": price_tip, "price_p": price_p,
                     "plan": s["planCode"], "name": names.get(s["planCode"], s["planCode"]),
                     "memory": s.get("memory"), "storage": s.get("storage"),
                     "memory_h": fmt_memory(s.get("memory")),
@@ -443,7 +473,19 @@ def api_clear():
         history.clear()
         save_json(HIST_FILE, history)
     return jsonify(ok=True)
-
+@app.get("/api/debug/<plan>")
+@requires_auth
+def api_debug(plan):
+    with lock:
+        return jsonify({
+            "plan": plan,
+            "computed": plan_prices.get(plan),
+            "pricings": raw_pricings.get(plan),
+            "addons": {
+                c: {"computed": addon_prices.get(c), "pricings": raw_pricings.get(c)}
+                for c in sorted(plan_addons.get(plan, []))
+            },
+        })
 
 PAGE = r"""<!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
