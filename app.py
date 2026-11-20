@@ -498,7 +498,7 @@ PAGE = r"""<!doctype html>
 main{max-width:1000px;margin:0 auto;padding:16px}
 h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:0 0 10px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin:12px 0}
-.mut{color:var(--mut)}.price{color:var(--txt)}.cfg.na{opacity:.55}.bad{color:#d1343c}
+.pm{color:#e8a317}.pf{color:var(--txt)}.mut{color:var(--mut)}.price{color:var(--txt)}.cfg.na{opacity:.55}.bad{color:#d1343c}
 .cfg{padding:8px 0;border-top:1px solid var(--bd)}.cfg:first-of-type{border-top:0}
 .cfg.w{border-left:3px solid var(--acc);padding-left:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -545,7 +545,7 @@ async function load(){
     $('#status').innerHTML='Dernière vérification : '+esc(s.last||'—')+(s.error?' · <span class="bad">Erreur : '+esc(s.error)+'</span>':'');
     $('#plans').innerHTML=s.plans.map(p=>'<option value="'+esc(p.code)+'" label="'+esc(p.name)+'">').join('');
     $('#configs').innerHTML=s.configs.length?s.configs.map(c=>
-      '<div class="cfg'+(c.watched?' w':'')+(c.orderable?'':' na')+'" title="'+esc(c.plan+' · '+c.memory+' · '+c.storage)+'"><b>'+esc(c.name)+'</b> <span class="mut">'+esc(c.memory_h)+' · '+esc(c.storage_h)+(c.price_h?' · <b class="price" title="'+esc(c.price_tip)+'">'+esc(c.price_h)+'</b>':'')+(c.watched?' · surveillé':'')+(c.orderable?'':' · non proposé à la commande')+'</span><div class="chips">'+
+      '<div class="cfg'+(c.watched?' w':'')+(c.orderable?'':' na')+'" title="'+esc(c.plan+' · '+c.memory+' · '+c.storage)+'"><b>'+esc(c.name)+'</b> <span class="mut">'+esc(c.memory_h)+' · '+esc(c.storage_h)+(c.price_p?' · <span title="'+esc(c.price_p.tip)+'"><b class="pm">'+esc(c.price_p.month)+'</b> · '+esc(c.price_p.setup)+(c.price_p.first?' · <b class="pf">'+esc(c.price_p.first)+'</b>':'')+'</span>':'')+(c.watched?' · surveillé':'')+(c.orderable?'':' · non proposé à la commande')+'</span><div class="chips">'+
       c.datacenters.map(d=>'<span class="chip'+chipCls(d,c)+'" title="'+esc(d.datacenter)+'">'+esc(d.label)+(chipCls(d,c)?' · '+esc(d.avail_h):'')+'</span>').join('')+'</div></div>').join('')
       :'Aucune config à afficher (ajoutez une règle ou attendez la première vérification).';
     $('#hist').innerHTML=s.history.length?'<table><tbody>'+s.history.map(h=>'<tr><td class="mut">'+esc(h.time)+'</td><td>'+esc(h.name||h.plan)+'</td><td>'+esc(h.mem_h)+' · '+esc(h.sto_h)+'</td><td>'+esc(h.dc_h)+' · '+esc(h.avail_h)+'</td></tr>').join('')+'</tbody></table>':'Aucune alerte';
