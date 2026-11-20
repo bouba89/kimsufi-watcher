@@ -1,0 +1,13 @@
+services:
+  kimsufi-watcher:
+    build: .
+    container_name: kimsufi-watcher
+    restart: unless-stopped
+    ports:
+      - "${KW_BIND:-127.0.0.1}:${KW_PORT:-8080}:8080"
+    environment:
+      KW_USER: ${KW_USER:-admin}
+      KW_PASS: ${KW_PASS:?définissez KW_PASS dans le fichier .env}
+    volumes:
+      - ./data:/data
+      - /etc/localtime:/etc/localtime:ro
