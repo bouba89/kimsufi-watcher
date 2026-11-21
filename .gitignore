@@ -1,11 +1,5 @@
-# Secrets et données locales (config.json contient le webhook Discord)
-docker-compose.override.yml
-.env
+__pycache__/
 data/
 config.json
 history.json
-
-# Python
-__pycache__/
-*.pyc
-.venv/
+.env
