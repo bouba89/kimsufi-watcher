@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="docs/kimsufi-logo.png" alt="Kimsufi" width="220">
-</p>
-
 <h1 align="center">Kimsufi watcher</h1>
 
 <p align="center">
@@ -25,33 +21,25 @@
 
 ## Installation (Docker)
 
-```yaml
-services:
-  kimsufi-watcher:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      KW_USER: admin
-      KW_PASS: change-moi
-      KW_DATA: /data
-    volumes:
-      - ./data:/data
-    restart: unless-stopped
-```
-
 ```bash
+git clone https://github.com/bouba89/kimsufi-watcher.git
+cd kimsufi-watcher
+cp .env.example .env     # puis édite .env et définis KW_PASS
 docker compose up -d --build
 ```
 
-Puis ouvre `http://ton-serveur:8080`.
+Puis ouvre `http://127.0.0.1:8080`. Par défaut, l'interface n'écoute que sur
+localhost (`KW_BIND=127.0.0.1`) ; pour y accéder depuis un autre poste,
+utilise un reverse proxy ou règle `KW_BIND=0.0.0.0` dans `.env`.
 
 ## Configuration
 
 | Variable | Rôle | Défaut |
 |---|---|---|
 | `KW_USER` | Identifiant de l'interface | `admin` |
-| `KW_PASS` | Mot de passe de l'interface | `changeme` |
+| `KW_PASS` | Mot de passe de l'interface (**obligatoire**, à définir dans `.env`) | – |
+| `KW_BIND` | Adresse d'écoute publiée par Docker | `127.0.0.1` |
+| `KW_PORT` | Port publié sur la machine | `8080` |
 | `KW_DATA` | Dossier de stockage (config, historique) | dossier de l'app |
 
 
