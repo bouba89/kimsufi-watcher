@@ -12,11 +12,6 @@
   <img src="docs/screenshot-reglages.png" alt="Règles de surveillance et réglages" width="800">
 </p>
 
-## [1.0.1] - 2026-11-21
-
-### Modifié
-- README : instructions d'installation.
-- 
 ## Fonctionnalités
 
 - Disponibilités en direct par datacenter
