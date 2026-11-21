@@ -13,3 +13,5 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: python -m py_compile app.py
+      - run: docker build -t kimsufi-watcher .
+      - run: docker run --rm kimsufi-watcher python -m py_compile app.py
