@@ -5,6 +5,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), ver
 
 ## [Non publié]
 
+## [1.0.1] - 2026-11-21
+
+### Modifié
+- README : instructions d'installation.
+
 ## [1.0.0] - 2026-11-20
 
 Première version publiée : interface web, règles multiples, alertes Discord, déploiement Docker.
@@ -47,6 +52,7 @@ Prototype.
 - Filtre sur le `planCode` et le stockage.
 - Exécution en service systemd.
 
-[Non publié]: https://github.com/bouba89/kimsufi-watcher/compare/v1.0.0...HEAD
+[Non publié]: https://github.com/bouba89/kimsufi-watcher/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/bouba89/kimsufi-watcher/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/bouba89/kimsufi-watcher/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/bouba89/kimsufi-watcher/releases/tag/v0.1.0
