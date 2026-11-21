@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/kimsufi-logo.png" alt="Kimsufi Watcher" width="120"></p>
+
 <h1 align="center">Kimsufi watcher</h1>
 
 <p align="center">
