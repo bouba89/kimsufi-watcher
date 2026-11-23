@@ -492,8 +492,8 @@ PAGE = r"""<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kimsufi watcher</title>
 <style>
-:root{--bg:#f6f7f9;--card:#fff;--txt:#1b2330;--mut:#6b7686;--bd:#dde2ea;--ok:#1a8f4c;--okbg:#dff5e8;--off:#8a93a1;--offbg:#eceff3;--acc:#1f6feb;--unk:#9a6700;--unkbg:#fdf1d6}
-@media (prefers-color-scheme:dark){:root{--bg:#14181f;--card:#1c222c;--txt:#e6e9ef;--mut:#98a2b3;--bd:#2c3441;--ok:#5fd38d;--okbg:#17382a;--off:#7d8794;--offbg:#252c37;--acc:#5b9dff;--unk:#e3b341;--unkbg:#3b3017}}
+:root{--bg:#f6f7f9;--card:#fff;--txt:#1b2330;--mut:#6b7686;--bd:#dde2ea;--ok:#1a8f4c;--okbg:#dff5e8;--off:#8a93a1;--offbg:#eceff3;--acc:#1f6feb;--unk:#9a6700;--unkbg:#fdf1d6;--bad:#c62828;--badbg:#fde7e7}
+@media (prefers-color-scheme:dark){:root{--bg:#14181f;--card:#1c222c;--txt:#e6e9ef;--mut:#98a2b3;--bd:#2c3441;--ok:#5fd38d;--okbg:#17382a;--off:#7d8794;--offbg:#252c37;--acc:#5b9dff;--unk:#e3b341;--unkbg:#3b3017;--bad:#ff7b72;--badbg:#3d1d1f}}
 *{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--txt)}
 main{max-width:1000px;margin:0 auto;padding:16px}
 h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:0 0 10px}
@@ -503,7 +503,7 @@ h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:0 0 10px}
 .cfg.w{border-left:3px solid var(--acc);padding-left:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .chip{padding:2px 8px;border-radius:99px;font-size:12px;background:var(--offbg);color:var(--off)}
-.chip.ok{background:var(--okbg);color:var(--ok);font-weight:600}.chip.unk{background:var(--unkbg);color:var(--unk)}
+.chip.ok{background:var(--okbg);color:var(--ok);font-weight:600}.chip.unk{background:var(--unkbg);color:var(--unk)}.chip.out{background:var(--badbg);color:var(--bad)}
 table{width:100%;border-collapse:collapse}td,th{padding:4px 6px;text-align:left;vertical-align:middle}
 th{font-size:12px;color:var(--mut);font-weight:500}
 input[type=text],input[type=number],input[type=password]{width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--txt)}
@@ -546,7 +546,7 @@ async function load(){
     $('#plans').innerHTML=s.plans.map(p=>'<option value="'+esc(p.code)+'" label="'+esc(p.name)+'">').join('');
     $('#configs').innerHTML=s.configs.length?s.configs.map(c=>
       '<div class="cfg'+(c.watched?' w':'')+(c.orderable?'':' na')+'" title="'+esc(c.plan+' · '+c.memory+' · '+c.storage)+'"><b>'+esc(c.name)+'</b> <span class="mut">'+esc(c.memory_h)+' · '+esc(c.storage_h)+(c.price_p?' · <span title="'+esc(c.price_p.tip)+'"><b class="pm">'+esc(c.price_p.month)+'</b> · '+esc(c.price_p.setup)+(c.price_p.first?' · <b class="pf">'+esc(c.price_p.first)+'</b>':'')+'</span>':'')+(c.watched?' · surveillé':'')+(c.orderable?'':' · non proposé à la commande')+'</span><div class="chips">'+
-      c.datacenters.map(d=>'<span class="chip'+chipCls(d,c)+'" title="'+esc(d.datacenter)+'">'+esc(d.label)+(chipCls(d,c)?' · '+esc(d.avail_h):'')+'</span>').join('')+'</div></div>').join('')
+      c.datacenters.map(d=>'<span class="chip'+chipCls(d,c)+'" title="'+esc(d.datacenter+(d.availability==='unavailable'?' · indisponible':''))+'">'+esc(d.label)+(chipCls(d,c)&&chipCls(d,c)!==' out'?' · '+esc(d.avail_h):'')+'</span>').join('')+'</div></div>').join('')
       :'Aucune config à afficher (ajoutez une règle ou attendez la première vérification).';
     $('#hist').innerHTML=s.history.length?'<table><tbody>'+s.history.map(h=>'<tr><td class="mut">'+esc(h.time)+'</td><td>'+esc(h.name||h.plan)+'</td><td>'+esc(h.mem_h)+' · '+esc(h.sto_h)+'</td><td>'+esc(h.dc_h)+' · '+esc(h.avail_h)+'</td></tr>').join('')+'</tbody></table>':'Aucune alerte';
     if(first){first=false;rules=s.conf.rules;$('#interval').value=s.conf.interval;$('#mention').checked=s.conf.mention;
@@ -554,7 +554,8 @@ async function load(){
   }catch(e){$('#status').innerHTML='<span class="bad">Connexion impossible : '+esc(e)+'</span>';}
 }
 function chipCls(d,c){
-  if(!c.orderable||d.availability==='unavailable')return'';
+  if(!c.orderable)return'';
+  if(d.availability==='unavailable')return' out';
   return d.availability==='unknown'?' unk':' ok';
 }
 function drawRules(){
