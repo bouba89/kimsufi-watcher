@@ -3,3 +3,5 @@ data/
 config.json
 history.json
 .env
+
+docker-compose.override.yml
